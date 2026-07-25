@@ -1,0 +1,693 @@
+<!doctype html>
+<html lang="pl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Prosta wyszukiwarka kodów PKD 2025 działająca bez backendu.">
+  <title>PKD Finder — wyszukiwarka PKD 2025</title>
+  <style>
+    :root {
+      --bg: #f5f5f7;
+      --text: #1d1d1f;
+      --muted: #6e6e73;
+      --faint: #86868b;
+      --blue: #0071e3;
+      --line: rgba(0, 0, 0, .08);
+      --white: rgba(255, 255, 255, .86);
+    }
+
+    * { box-sizing: border-box; }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display",
+        "SF Pro Text", "Helvetica Neue", Arial, sans-serif;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    button, input { font: inherit; }
+    button, a { -webkit-tap-highlight-color: transparent; }
+
+    button:focus-visible, a:focus-visible, input:focus-visible {
+      outline: 3px solid rgba(0, 113, 227, .25);
+      outline-offset: 3px;
+    }
+
+    .sr-only {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      padding: 0;
+      margin: -1px;
+      overflow: hidden;
+      clip: rect(0, 0, 0, 0);
+      white-space: nowrap;
+      border: 0;
+    }
+
+    .topbar {
+      width: min(1120px, calc(100% - 48px));
+      height: 60px;
+      margin: auto;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      color: var(--text);
+      text-decoration: none;
+      font-size: 15px;
+      font-weight: 650;
+    }
+
+    .mark {
+      width: 28px;
+      height: 28px;
+      display: grid;
+      place-items: center;
+      border-radius: 8px;
+      background: var(--text);
+      color: #fff;
+      font-size: 14px;
+      font-weight: 750;
+    }
+
+    .source {
+      color: var(--muted);
+      text-decoration: none;
+      font-size: 13px;
+    }
+
+    .source:hover { color: var(--blue); }
+
+    .hero {
+      width: min(900px, calc(100% - 48px));
+      margin: 52px auto 36px;
+      text-align: center;
+    }
+
+    .version {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 18px;
+      padding: 7px 12px;
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      background: rgba(255, 255, 255, .7);
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 600;
+    }
+
+    .dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: #30d158;
+      box-shadow: 0 0 0 3px rgba(48, 209, 88, .12);
+    }
+
+    h1 {
+      margin: 0;
+      font-size: clamp(48px, 6.2vw, 72px);
+      line-height: .98;
+      letter-spacing: -.06em;
+    }
+
+    .hero p {
+      margin: 22px 0 0;
+      color: var(--muted);
+      font-size: clamp(17px, 1.7vw, 20px);
+      line-height: 1.5;
+      letter-spacing: -.01em;
+    }
+
+    .search-area {
+      width: min(900px, calc(100% - 48px));
+      margin: auto;
+    }
+
+    .search-box {
+      height: 70px;
+      padding: 0 22px 0 28px;
+      display: flex;
+      align-items: center;
+      gap: 18px;
+      border: 1px solid var(--line);
+      border-radius: 24px;
+      background: var(--white);
+      box-shadow: 0 20px 55px rgba(0, 0, 0, .08);
+      backdrop-filter: blur(24px);
+      transition: box-shadow .18s, border-color .18s;
+    }
+
+    .search-box:focus-within {
+      border-color: rgba(0, 113, 227, .38);
+      box-shadow: 0 24px 64px rgba(0, 0, 0, .1),
+        0 0 0 4px rgba(0, 113, 227, .08);
+    }
+
+    .glass {
+      position: relative;
+      flex: 0 0 auto;
+      width: 20px;
+      height: 20px;
+      border: 2px solid var(--faint);
+      border-radius: 50%;
+    }
+
+    .glass::after {
+      content: "";
+      position: absolute;
+      width: 8px;
+      height: 2px;
+      right: -6px;
+      bottom: -3px;
+      border-radius: 99px;
+      background: var(--faint);
+      transform: rotate(45deg);
+    }
+
+    #search {
+      min-width: 0;
+      height: 100%;
+      flex: 1;
+      padding: 0;
+      border: 0;
+      outline: 0;
+      appearance: none;
+      background: transparent;
+      color: var(--text);
+      font-size: 20px;
+      letter-spacing: -.02em;
+    }
+
+    #search::-webkit-search-cancel-button { display: none; }
+    #search::placeholder { color: #a1a1a6; opacity: 1; }
+
+    kbd {
+      width: 28px;
+      height: 28px;
+      display: grid;
+      place-items: center;
+      border: 1px solid var(--line);
+      border-radius: 7px;
+      background: var(--bg);
+      color: var(--faint);
+      font-family: inherit;
+      font-size: 13px;
+    }
+
+    #clear {
+      width: 30px;
+      height: 30px;
+      display: none;
+      place-items: center;
+      padding: 0 0 2px;
+      border: 0;
+      border-radius: 50%;
+      background: #e8e8ed;
+      color: var(--muted);
+      cursor: pointer;
+      font-size: 21px;
+    }
+
+    .filters {
+      display: flex;
+      gap: 8px;
+      margin-top: 18px;
+      padding: 2px 2px 14px;
+      overflow-x: auto;
+      scrollbar-width: none;
+    }
+
+    .filters::-webkit-scrollbar { display: none; }
+
+    .filter {
+      flex: 0 0 auto;
+      min-width: 38px;
+      height: 36px;
+      padding: 0 13px;
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      background: rgba(255, 255, 255, .64);
+      color: var(--muted);
+      cursor: pointer;
+      font-size: 12px;
+      font-weight: 600;
+    }
+
+    .filter:hover { color: var(--text); background: #fff; }
+    .filter.active { border-color: var(--text); background: var(--text); color: #fff; }
+
+    .results {
+      width: min(1040px, calc(100% - 48px));
+      margin: 96px auto 0;
+    }
+
+    .results-head {
+      margin-bottom: 24px;
+      display: flex;
+      align-items: flex-end;
+      justify-content: space-between;
+      gap: 24px;
+    }
+
+    .eyebrow {
+      margin: 0 0 8px;
+      color: var(--blue);
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: .05em;
+      text-transform: uppercase;
+    }
+
+    h2 {
+      margin: 0;
+      font-size: clamp(32px, 4vw, 44px);
+      line-height: 1.05;
+      letter-spacing: -.045em;
+    }
+
+    #count {
+      margin: 0 0 4px;
+      color: var(--faint);
+      font-size: 13px;
+      white-space: nowrap;
+    }
+
+    #list {
+      overflow: hidden;
+      border: 1px solid var(--line);
+      border-radius: 26px;
+      background: rgba(255, 255, 255, .78);
+      box-shadow: 0 8px 30px rgba(0, 0, 0, .04);
+    }
+
+    .card {
+      min-height: 108px;
+      padding: 22px 24px 22px 28px;
+      display: grid;
+      grid-template-columns: 118px minmax(0, 1fr) auto;
+      align-items: center;
+      gap: 24px;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .card:last-child { border-bottom: 0; }
+    .card:hover { background: rgba(255, 255, 255, .9); }
+
+    .code-block { display: flex; flex-direction: column; align-items: flex-start; gap: 7px; }
+
+    .code {
+      color: var(--blue);
+      font-size: 18px;
+      font-weight: 700;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .section {
+      color: var(--faint);
+      font-size: 11px;
+      font-weight: 600;
+    }
+
+    .description { min-width: 0; }
+
+    .description h3 {
+      margin: 0;
+      font-size: 17px;
+      line-height: 1.35;
+      letter-spacing: -.015em;
+    }
+
+    .description p {
+      margin: 7px 0 0;
+      overflow: hidden;
+      color: var(--faint);
+      font-size: 12px;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .copy {
+      min-width: 76px;
+      height: 34px;
+      padding: 0 14px;
+      border: 0;
+      border-radius: 999px;
+      background: #e8e8ed;
+      color: #424245;
+      cursor: pointer;
+      font-size: 12px;
+      font-weight: 650;
+    }
+
+    .copy:hover { background: #dedee3; }
+    .copy.copied { background: #e7f7eb; color: #16803c; }
+
+    #more {
+      height: 48px;
+      margin: 30px auto 0;
+      padding: 0 22px;
+      display: none;
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      background: #fff;
+      color: var(--text);
+      cursor: pointer;
+      font-size: 13px;
+      font-weight: 650;
+      box-shadow: 0 4px 15px rgba(0, 0, 0, .04);
+    }
+
+    .empty {
+      padding: 70px 24px;
+      text-align: center;
+    }
+
+    .empty h3 { margin: 0; font-size: 22px; }
+    .empty p { margin: 9px 0 0; color: var(--muted); font-size: 14px; }
+
+    footer {
+      width: min(1040px, calc(100% - 48px));
+      margin: 120px auto 0;
+      padding: 28px 0 42px;
+      display: flex;
+      justify-content: space-between;
+      gap: 40px;
+      border-top: 1px solid var(--line);
+      color: var(--faint);
+      font-size: 11px;
+      line-height: 1.55;
+    }
+
+    footer p { max-width: 480px; margin: 0; }
+
+    @media (max-width: 720px) {
+      .topbar, .hero, .search-area, .results, footer {
+        width: min(100% - 32px, 1040px);
+      }
+
+      .topbar { height: 58px; }
+      .source { font-size: 12px; }
+      .hero { margin-top: 38px; margin-bottom: 30px; }
+      h1 { font-size: clamp(44px, 13vw, 58px); }
+      .hero p { margin-top: 18px; font-size: 16px; }
+      .hero br { display: none; }
+      .search-box { height: 62px; padding: 0 17px 0 20px; gap: 15px; border-radius: 20px; }
+      #search { font-size: 16px; }
+      kbd { display: none; }
+      .filters { margin-right: -16px; padding-right: 16px; }
+      .results { margin-top: 78px; }
+      h2 { font-size: 32px; }
+
+      .card {
+        min-height: 0;
+        padding: 22px 18px;
+        grid-template-columns: 1fr auto;
+        gap: 14px 12px;
+      }
+
+      .code-block { grid-column: 1; flex-direction: row; align-items: baseline; }
+      .description { grid-column: 1 / -1; grid-row: 2; }
+      .description h3 { font-size: 16px; }
+      .description p { display: none; }
+      .copy { grid-column: 2; grid-row: 1; }
+      footer { margin-top: 90px; flex-direction: column; gap: 12px; }
+    }
+
+    @media (max-width: 390px) {
+      .brand span:last-child { display: none; }
+      h1 { font-size: 44px; }
+      #search::placeholder { color: transparent; }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      html { scroll-behavior: auto; }
+    }
+  </style>
+</head>
+<body>
+  <header class="topbar">
+    <a class="brand" href="#top" aria-label="PKD Finder — strona główna">
+      <span class="mark">P</span><span>PKD Finder</span>
+    </a>
+    <a class="source" href="https://bip.stat.gov.pl/dzialalnosc-statystyki-publicznej/rejestr-regon/pkd-2025/" target="_blank" rel="noreferrer">
+      Źródło: GUS ↗
+    </a>
+  </header>
+
+  <main>
+    <section class="hero" id="top">
+      <div class="version"><span class="dot"></span>Aktualna klasyfikacja · PKD 2025</div>
+      <h1>Znajdź właściwy<br>kod PKD.</h1>
+      <p>Wyszukuj po kodzie lub opisz działalność własnymi słowami.<br>Wyniki pojawią się natychmiast.</p>
+    </section>
+
+    <section class="search-area" aria-label="Wyszukiwarka kodów PKD">
+      <div class="search-box">
+        <span class="glass" aria-hidden="true"></span>
+        <label class="sr-only" for="search">Wyszukaj kod lub rodzaj działalności</label>
+        <input id="search" type="search" autocomplete="off" spellcheck="false"
+          placeholder="Np. programowanie, transport lub 62.10.A">
+        <button id="clear" type="button" aria-label="Wyczyść wyszukiwanie">×</button>
+        <kbd>/</kbd>
+      </div>
+      <div class="filters" id="filters" aria-label="Filtruj według sekcji"></div>
+    </section>
+
+    <section class="results" aria-labelledby="heading">
+      <div class="results-head">
+        <div>
+          <p class="eyebrow" id="eyebrow">Pełna klasyfikacja</p>
+          <h2 id="heading">Kody PKD 2025</h2>
+        </div>
+        <p id="count" aria-live="polite"></p>
+      </div>
+      <div id="list"></div>
+      <button id="more" type="button">Pokaż więcej ↓</button>
+    </section>
+  </main>
+
+  <footer>
+    <p>PKD Finder · Dane: Polska Klasyfikacja Działalności 2025</p>
+    <p>Narzędzie pomocnicze. Przed rejestracją działalności zweryfikuj kod w oficjalnych materiałach GUS.</p>
+  </footer>
+
+  <script src="pkd2025.js"></script>
+  <script>
+    (() => {
+      "use strict";
+
+      const data = window.PKD_DATA || [];
+      const pageSize = 48;
+      let activeSection = "all";
+      let limit = pageSize;
+      let results = data;
+
+      const search = document.querySelector("#search");
+      const clear = document.querySelector("#clear");
+      const shortcut = document.querySelector("kbd");
+      const filters = document.querySelector("#filters");
+      const list = document.querySelector("#list");
+      const count = document.querySelector("#count");
+      const heading = document.querySelector("#heading");
+      const eyebrow = document.querySelector("#eyebrow");
+      const more = document.querySelector("#more");
+
+      const normalize = value => value
+        .toLocaleLowerCase("pl-PL")
+        .replaceAll("ł", "l")
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .replace(/[–—]/g, "-")
+        .replace(/\s+/g, " ")
+        .trim();
+
+      const compactCode = value => normalize(value).replace(/[^a-z0-9]/g, "");
+
+      const matchesWord = (haystack, term) => {
+        if (haystack.includes(term)) return true;
+        if (term.length < 6 || /\d/.test(term)) return false;
+        const length = Math.max(5, Math.min(8, term.length - 2));
+        const stem = term.slice(0, length);
+        return haystack.split(/[^a-z0-9]+/).some(word => word.startsWith(stem));
+      };
+
+      const label = number => {
+        if (number === 1) return "wynik";
+        const lastTwo = number % 100;
+        const last = number % 10;
+        return last >= 2 && last <= 4 && !(lastTwo >= 12 && lastTwo <= 14)
+          ? "wyniki" : "wyników";
+      };
+
+      const escapeHtml = value => String(value).replace(/[&<>"']/g, character => ({
+        "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#039;"
+      })[character]);
+
+      const fallbackCopy = text => {
+        const area = document.createElement("textarea");
+        area.value = text;
+        area.style.position = "fixed";
+        area.style.opacity = "0";
+        document.body.appendChild(area);
+        area.select();
+        document.execCommand("copy");
+        area.remove();
+      };
+
+      const copyCode = async (code, button) => {
+        try {
+          if (navigator.clipboard && window.isSecureContext) {
+            await navigator.clipboard.writeText(code);
+          } else {
+            fallbackCopy(code);
+          }
+          button.textContent = "Skopiowano";
+          button.classList.add("copied");
+          setTimeout(() => {
+            button.textContent = "Kopiuj";
+            button.classList.remove("copied");
+          }, 1400);
+        } catch {
+          fallbackCopy(code);
+        }
+      };
+
+      const filterData = () => {
+        const query = normalize(search.value);
+        const queryCode = compactCode(search.value);
+        const terms = query.split(" ").filter(Boolean);
+
+        results = data
+          .filter(item => activeSection === "all" || item.section === activeSection)
+          .map(item => {
+            if (!query) return { item, score: 10 };
+            const name = normalize(item.name);
+            const code = normalize(item.code);
+            const sectionName = normalize(item.sectionName);
+            const codeCompact = compactCode(item.code);
+            const haystack = `${code} ${name} ${sectionName}`;
+            const matches = terms.every(term =>
+              matchesWord(haystack, term) ||
+              codeCompact.includes(term.replace(/[^a-z0-9]/g, ""))
+            );
+
+            if (!matches && !codeCompact.includes(queryCode)) return null;
+
+            let score = 4;
+            if (code === query || codeCompact === queryCode) score = 0;
+            else if (code.startsWith(query) || codeCompact.startsWith(queryCode)) score = 1;
+            else if (name.startsWith(query)) score = 2;
+            else if (name.includes(query)) score = 3;
+            return { item, score };
+          })
+          .filter(Boolean)
+          .sort((a, b) => a.score - b.score || a.item.code.localeCompare(b.item.code, "pl-PL"))
+          .map(result => result.item);
+      };
+
+      const render = () => {
+        filterData();
+        const visible = results.slice(0, limit);
+        count.textContent = `${results.length} ${label(results.length)}`;
+        heading.textContent = search.value.trim() ? "Wyniki wyszukiwania" : "Kody PKD 2025";
+        eyebrow.textContent = activeSection === "all"
+          ? "Pełna klasyfikacja" : `Sekcja ${activeSection}`;
+        clear.style.display = search.value ? "grid" : "none";
+        shortcut.style.display = search.value ? "none" : "";
+
+        if (!visible.length) {
+          list.innerHTML = '<div class="empty"><h3>Nie znaleźliśmy takiego kodu</h3><p>Spróbuj krótszego hasła albo wybierz inną sekcję.</p></div>';
+        } else {
+          list.innerHTML = visible.map(item => `
+            <article class="card">
+              <div class="code-block">
+                <span class="code">${escapeHtml(item.code)}</span>
+                <span class="section">Sekcja ${escapeHtml(item.section)}</span>
+              </div>
+              <div class="description">
+                <h3>${escapeHtml(item.name)}</h3>
+                <p>${escapeHtml(item.sectionName)}</p>
+              </div>
+              <button class="copy" type="button" data-code="${escapeHtml(item.code)}"
+                aria-label="Kopiuj kod ${escapeHtml(item.code)}">Kopiuj</button>
+            </article>
+          `).join("");
+        }
+
+        more.style.display = limit < results.length ? "block" : "none";
+      };
+
+      const sections = [...new Map(data.map(item => [
+        item.section, { id: item.section, name: item.sectionName }
+      ])).values()];
+
+      filters.innerHTML = `
+        <button class="filter active" type="button" data-section="all">Wszystkie</button>
+        ${sections.map(item => `
+          <button class="filter" type="button" data-section="${item.id}"
+            title="${escapeHtml(item.name)}">${item.id}</button>
+        `).join("")}
+      `;
+
+      search.addEventListener("input", () => { limit = pageSize; render(); });
+
+      clear.addEventListener("click", () => {
+        search.value = "";
+        limit = pageSize;
+        search.focus();
+        render();
+      });
+
+      filters.addEventListener("click", event => {
+        const button = event.target.closest("[data-section]");
+        if (!button) return;
+        activeSection = button.dataset.section;
+        limit = pageSize;
+        filters.querySelectorAll(".filter").forEach(item =>
+          item.classList.toggle("active", item === button)
+        );
+        render();
+      });
+
+      list.addEventListener("click", event => {
+        const button = event.target.closest("[data-code]");
+        if (button) copyCode(button.dataset.code, button);
+      });
+
+      more.addEventListener("click", () => {
+        limit += pageSize;
+        render();
+      });
+
+      document.addEventListener("keydown", event => {
+        const typing = ["INPUT", "TEXTAREA"].includes(document.activeElement.tagName);
+        if (event.key === "/" && !typing) {
+          event.preventDefault();
+          search.focus();
+        }
+        if (event.key === "Escape" && document.activeElement === search) {
+          search.value = "";
+          search.blur();
+          limit = pageSize;
+          render();
+        }
+      });
+
+      render();
+    })();
+  </script>
+</body>
+</html>
